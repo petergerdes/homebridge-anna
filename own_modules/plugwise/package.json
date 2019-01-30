@@ -1,0 +1,25 @@
+{
+  "name": "plugwise",
+  "version": "0.1.0",
+  "repository": {
+    "type": "git",
+    "url": ""
+  },
+  "description": "Plugwise support for Homey devices",
+  "main": "plugwise.js",
+  "author": {
+    "name": "Athom BV",
+    "email": "info@athom.com"
+  },
+  "license": "TBD",
+  "bugs": {
+    "url": "TBD"
+  },
+  "maintainers": [
+    {
+      "name": "Athom BV",
+      "email": "info@athom.com"
+    }
+  ],
+  "directories": {}
+}

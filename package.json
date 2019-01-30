@@ -1,0 +1,17 @@
+{
+  "name": "homebridge-anna",
+  "version": "1.0.0",
+  "description": "Let Homekit control your Plugwise Anna!",
+  "dependencies": {
+    "mdns-js": "^1.0.3",
+    "pixl-xml": "^1.0.13",
+    "plugwise": "file:./own_modules/plugwise",
+    "plugwise-anna": "file:./own_modules/plugwise-anna",
+    "request": "^2.67.0"
+  },
+  "devDependencies": {},
+  "scripts": {},
+  "repository": {},
+  "author": "Peter Gerdes",
+  "license": "MIT"
+}

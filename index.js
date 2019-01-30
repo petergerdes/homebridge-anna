@@ -24,8 +24,8 @@
 
 "use strict";
 
-var PlugwiseAPI = require('plugwise');
-var Anna = require('plugwise-anna');
+var PlugwiseAPI = require('./lib/plugwise/plugwise.js');
+var Anna = require('./lib/plugwise-anna/anna.js');
 var Service, Characteristic;
 
 module.exports = function(homebridge){

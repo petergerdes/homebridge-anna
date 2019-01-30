@@ -1,6 +1,6 @@
 {
   "name": "homebridge-anna",
-  "version": "1.0.3",
+  "version": "1.0.5",
   "description": "Let Homekit control your Plugwise Anna!",
   "repository": {
       "type" : "git",
@@ -15,5 +15,10 @@
   "scripts": {},
   "repository": {},
   "author": "Peter Gerdes",
-  "license": "MIT"
+  "license": "MIT",
+  "keywords": [
+    "homebridge-plugin",
+    "anna",
+    "thermostat"
+  ],
 }

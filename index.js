@@ -114,7 +114,7 @@ Thermostat.prototype = {
         });
 	},
 	setTargetTemperature: function(value, callback) {
-		this.log('setTargetTemperature from Anna on: ' this.annaDevice.ip + ' to ' + value);
+		this.log('setTargetTemperature from Anna on: ' + this.annaDevice.ip + ' to ' + value);
 
         this.annaDevice.setTarget(value, function (err, result) {
             if(err)

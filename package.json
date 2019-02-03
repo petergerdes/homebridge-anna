@@ -1,6 +1,6 @@
 {
   "name": "homebridge-anna",
-  "version": "1.0.7",
+  "version": "1.0.8",
   "description": "Let Homekit control your Plugwise Anna!",
   "repository": {
       "type" : "git",

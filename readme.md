@@ -34,7 +34,3 @@ Configuration sample:
         "platforms":[]
     }
 ```
-
-# Inspired
-
-This plugin is inspired on homebridge-thermostat

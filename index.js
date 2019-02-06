@@ -22,46 +22,47 @@
 
 */
 
-'use strict'
+'use strict';
 
 const PlugwiseAPI = require('./lib/plugwise/plugwise.js');
 const Anna = require('./lib/plugwise-anna/anna.js');
 
-let Service, Characteristic
+let Service, Characteristic;
 
 module.exports = (homebridge) => {
-  /* this is the starting point for the plugin where we register the accessory */
-  Service = homebridge.hap.Service
-  Characteristic = homebridge.hap.Characteristic
-  homebridge.registerAccessory('homebridge-anna-thermostat', 'Thermostat', Thermostat);
+	/* this is the starting point for the plugin where we register the accessory */
+	Service = homebridge.hap.Service;
+	Characteristic = homebridge.hap.Characteristic;
+	homebridge.registerAccessory('homebridge-anna-thermostat', 'Thermostat', Thermostat);
 }
 
 class Thermostat {
-  constructor (log, config) {
-    this.log = log;
-    this.config = config;
+	constructor(log, config) {
+		this.log = log;
 
-    this.maxTemp = config.maxTemp || 30;
-    this.minTemp = config.minTemp || 15;
-    this.name = config.name || 'smile';
-    this.password = config.password || null;
-    this.ip = config.ip || null;
-    this.annaDevice = null;
-    this.log(this.ip, this.name);
+		this.maxTemp = config.maxTemp || 30;
+		this.minTemp = config.minTemp || 15;
+		this.name = config.name || 'smile';
+		this.password = config.password || null;
+		this.ip = config.ip || null;
+		this.annaDevice = null;
+		this.log(this.ip, this.name);
 
-    this.currentTemperature = 19;
-    this.targetTemperature = 21;
+		this.currentTemperature = 19;
+		this.targetTemperature = 21;
 
-    this.service = new Service.Thermostat(this.name);
-  }
+		this.targetHeatingCoolingState = Characteristic.TargetHeatingCoolingState.HEAT;
 
-  getServices () {
-    const informationService = new Service.AccessoryInformation()
-        .setCharacteristic(Characteristic.Manufacturer, 'Plugwise')
-        .setCharacteristic(Characteristic.Model, 'Anna')
-        .setCharacteristic(Characteristic.SerialNumber, 'plugwise-anna-thermostat');
+		this.service = new Service.Thermostat(this.name);
+	}
 
-        this.service
+	getServices() {
+		const informationService = new Service.AccessoryInformation()
+			.setCharacteristic(Characteristic.Manufacturer, 'Plugwise')
+			.setCharacteristic(Characteristic.Model, 'Anna')
+			.setCharacteristic(Characteristic.SerialNumber, 'plugwise-anna-thermostat');
+
+		this.service
 			.getCharacteristic(Characteristic.CurrentTemperature)
 			.on('get', this.getCurrentTemperature.bind(this));
 
@@ -86,154 +87,187 @@ class Thermostat {
 				minStep: 1
 			});
 
-        /* Return both the main service (this.service) and the informationService */
-        return [informationService, this.service];
-  }
+		this.service
+			.getCharacteristic(Characteristic.TargetHeatingCoolingState)
+			.on('get', this.getTargetHeatingCoolingState.bind(this));
 
-  getName (callback) {
-      this.log('getName : ', this.name);
-      callback(null, this.name);
-  }
+		/* Return both the main service (this.service) and the informationService */
+		return [informationService, this.service];
+	}
 
-  setupAnnaDevice () {
-      return new Promise((resolve, reject) => {
-            this.log('Set Anna device up');
+	getName(callback) {
+		this.log('getName : ', this.name);
+		callback(null, this.name);
+	}
 
-            var device = {
-                ip: this.ip,
-                name: this.name,
-                password: this.password
-            };
+	setupAnnaDevice() {
+		return new Promise((resolve, reject) => {
+			this.log('Set Anna device up');
 
-            PlugwiseAPI.fetchData(device).then(devices_data => {
-                this.log('yessss');
-                for (let i in devices_data) {
-                    this.log('Joejoe');
-                    if (devices_data[i].type === 'thermostat') {
+			var device = {
+				ip: this.ip,
+				name: this.name,
+				password: this.password
+			};
 
-                        this.log('Anna: connect to device at ' + device.ip);
+			PlugwiseAPI.fetchData(device).then(devices_data => {
+				for (let i in devices_data) {
+					if (devices_data[i].type === 'thermostat') {
+						this.log('Anna: connect to device at ' + device.ip);
 
-                        var formatted_device = {
-                            name: 'Anna',
-                            data: {
-                                ip: device.ip,
-                                id: devices_data[i].id,
-                                hostname: device.hostname,
-                                password: device.password
-                            }
-                        };
+						this.annaDevice = new Anna(device.password, device.ip, devices_data[i].id, device.hostname);
+						resolve();
+					}
+				}
+			});
+		});
+	}
 
-                        this.annaDevice = new Anna(device.password, device.ip, devices_data[i].id, device.hostname);
-                        resolve();
-                    }
-                }
-            });
-        });
-  }
+	getCurrentTemperature(callback) {
+		if (!this.annaDevice) {
+			this.setupAnnaDevice().then(() => {
+				this.log('getCurrentTemperature from Anna on: ' + this.annaDevice.ip);
+				this.annaDevice._getMeasure((result) => {
+					if (result) {
+						this.currentTemperature = result;
+						callback(null, this.currentTemperature);
+					} else {
+						this.log('could not fetch current temperature');
+						callback('could not fetch current temperature');
+					}
+				});
+			});
+		} else {
+			this.log('getCurrentTemperature from Anna on: ' + this.annaDevice.ip);
+			this.annaDevice._getMeasure((result) => {
+				if (result) {
+					this.currentTemperature = result;
+					callback(null, this.currentTemperature);
+				} else {
+					this.log('could not fetch current temperature');
+					callback('could not fetch current temperature');
+				}
+			});
+		}
+	}
 
-  getCurrentTemperature (callback) {
-      if(!this.annaDevice)
-      {
-          this.setupAnnaDevice().then(() => {
-              this.log('getCurrentTemperature from Anna on: ' + this.annaDevice.ip);
-              this.annaDevice._getMeasure((result) => {
-                  if(result)
-                  {
-                      this.currentTemperature = result;
-                      callback(null, this.currentTemperature);
-                  }
-                  else {
-                      this.log('could not fetch current temperature');
-                      callback('could not fetch current temperature');
-                  }
-              });
-          });
-      }
-      else {
-          this.log('getCurrentTemperature from Anna on: ' + this.annaDevice.ip);
-          this.annaDevice._getMeasure((result) => {
-              if(result)
-              {
-                  this.currentTemperature = result;
-                  callback(null, this.currentTemperature);
-              }
-              else {
-                  this.log('could not fetch current temperature');
-                  callback('could not fetch current temperature');
-              }
-          });
-      }
-  }
+	getTargetTemperature(callback) {
+		if (!this.annaDevice) {
+			this.setupAnnaDevice().then(() => {
+				this.log('getCurrentTemperature from Anna on: ' + this.annaDevice.ip);
 
-  getTargetTemperature (callback) {
-      if(!this.annaDevice)
-      {
-          this.setupAnnaDevice().then(() => {
-              this.log('getCurrentTemperature from Anna on: ' + this.annaDevice.ip);
+				this.annaDevice._getTarget((result) => {
+					if (result) {
+						this.targetTemperature = result;
+						callback(null, this.targetTemperature);
+					} else {
+						this.log('could not fetch current target temperature');
+						callback('could not fetch current target temperature');
+					}
+				});
+			});
+		} else {
+			this.log('getCurrentTemperature from Anna on: ' + this.annaDevice.ip);
 
-              this.annaDevice._getTarget((result) => {
-                  if(result)
-                  {
-                      this.targetTemperature = result;
-                      callback(null, this.targetTemperature);
-                  }
-                  else {
-                      this.log('could not fetch current target temperature');
-                      callback('could not fetch current target temperature');
-                  }
-              });
-          });
-      }
-      else {
-          this.log('getCurrentTemperature from Anna on: ' + this.annaDevice.ip);
+			this.annaDevice._getTarget((result) => {
+				if (result) {
+					this.targetTemperature = result;
+					callback(null, this.targetTemperature);
+				} else {
+					this.log('could not fetch current target temperature');
+					callback('could not fetch current target temperature');
+				}
+			});
+		}
+	}
 
-          this.annaDevice._getTarget((result) => {
-              if(result)
-              {
-                  this.targetTemperature = result;
-                  callback(null, this.targetTemperature);
-              }
-              else {
-                  this.log('could not fetch current target temperature');
-                  callback('could not fetch current target temperature');
-              }
-          });
-      }
-  }
+	setTargetTemperature(value, callback) {
+		if (!this.annaDevice) {
+			this.setupAnnaDevice().then(() => {
+				this.log('setTargetTemperature from Anna on: ' + this.annaDevice.ip + ' to ' + value);
 
-  setTargetTemperature (value, callback) {
-      if(!this.annaDevice)
-      {
-          this.setupAnnaDevice().then(() => {
-              this.log('setTargetTemperature from Anna on: ' + this.annaDevice.ip + ' to ' + value);
+				this.annaDevice.setTarget(value, (err, result) => {
+					if (err) {
+						this.log('Error setting target temperature: %s', err);
+						callback(err);
+					} else {
+						this.log('Target temperature set to ' + result);
+						callback(null);
+					}
+				});
+			});
+		} else {
+			this.log('setTargetTemperature from Anna on: ' + this.annaDevice.ip + ' to ' + value);
 
-              this.annaDevice.setTarget(value, (err, result) => {
-                  if(err)
-                  {
-                      this.log('Error setting target temperature: %s', err);
-                      callback(err);
-                  }
-                  else {
-                      this.log('Target temperature set to ' + result);
-                      callback(null);
-                  }
-              });
-          });
-      }
-      else {
-          this.log('setTargetTemperature from Anna on: ' + this.annaDevice.ip + ' to ' + value);
+			this.annaDevice.setTarget(value, (err, result) => {
+				if (err) {
+					this.log('Error setting target temperature: %s', err);
+					callback(err);
+				} else {
+					this.log('Target temperature set to ' + result);
+					callback(null);
+				}
+			});
+		}
+	}
 
-          this.annaDevice.setTarget(value, (err, result) => {
-              if(err)
-              {
-                  this.log('Error setting target temperature: %s', err);
-                  callback(err);
-              }
-              else {
-                  this.log('Target temperature set to ' + result);
-                  callback(null);
-              }
-          });
-      }
-  }
+	getTargetHeatingCoolingState(callback) {
+		let targetTemp = 0;
+
+		if (!this.annaDevice) {
+			this.setupAnnaDevice().then(() => {
+				this.log('getTargetHeatingCoolingState from Anna on: ' + this.annaDevice.ip);
+
+				this.annaDevice._getTarget((result) => {
+					if (result) {
+						targetTemp = result;
+
+						this.annaDevice._getMeasure((result) => {
+							if (result) {
+								if (result < targetTemp) {
+									this.targetHeatingCoolingState = Characteristic.TargetHeatingCoolingState.HEAT;
+								} else {
+									this.targetHeatingCoolingState = Characteristic.TargetHeatingCoolingState.COOL;
+								}
+
+								callback(null, this.targetHeatingCoolingState);
+							} else {
+								this.log('could not fetch current temperature');
+								callback('could not fetch current temperature');
+							}
+						});
+					} else {
+						this.log('could not fetch current target temperature');
+						callback('could not fetch current target temperature');
+					}
+				});
+			});
+		} else {
+			this.log('getTargetHeatingCoolingState from Anna on: ' + this.annaDevice.ip);
+
+			this.annaDevice._getTarget((result) => {
+				if (result) {
+					targetTemp = result;
+
+					this.annaDevice._getMeasure((result) => {
+						if (result) {
+							if (result < targetTemp) {
+								this.targetHeatingCoolingState = Characteristic.TargetHeatingCoolingState.HEAT;
+							} else {
+								this.targetHeatingCoolingState = Characteristic.TargetHeatingCoolingState.COOL;
+							}
+
+							callback(null, this.targetHeatingCoolingState);
+						} else {
+							this.log('could not fetch current temperature');
+							callback('could not fetch current temperature');
+						}
+					});
+				} else {
+					this.log('could not fetch current target temperature');
+					callback('could not fetch current target temperature');
+				}
+			});
+		}
+	}
 }

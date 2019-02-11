@@ -212,62 +212,15 @@ class Thermostat {
 	}
 
 	getTargetHeatingCoolingState(callback) {
-		let targetTemp = 0;
-
-		if (!this.annaDevice) {
-			this.setupAnnaDevice().then(() => {
-				this.log('getTargetHeatingCoolingState from Anna on: ' + this.annaDevice.ip);
-
-				this.annaDevice._getTarget((result) => {
-					if (result) {
-						targetTemp = result;
-
-						this.annaDevice._getMeasure((result) => {
-							if (result) {
-								if (result < targetTemp) {
-									this.targetHeatingCoolingState = Characteristic.TargetHeatingCoolingState.HEAT;
-								} else {
-									this.targetHeatingCoolingState = Characteristic.TargetHeatingCoolingState.COOL;
-								}
-
-								callback(null, this.targetHeatingCoolingState);
-							} else {
-								this.log('could not fetch current temperature');
-								callback('could not fetch current temperature');
-							}
-						});
-					} else {
-						this.log('could not fetch current target temperature');
-						callback('could not fetch current target temperature');
-					}
-				});
-			});
+		if((this.currentTemperature === this.targetTemperature))
+		{
+			this.targetHeatingCoolingState = Characteristic.TargetHeatingCoolingState.HEAT;
+		} else if (this.currentTemperature < this.targetTemperature) {
+			this.targetHeatingCoolingState = Characteristic.TargetHeatingCoolingState.HEAT;
 		} else {
-			this.log('getTargetHeatingCoolingState from Anna on: ' + this.annaDevice.ip);
-
-			this.annaDevice._getTarget((result) => {
-				if (result) {
-					targetTemp = result;
-
-					this.annaDevice._getMeasure((result) => {
-						if (result) {
-							if (result < targetTemp) {
-								this.targetHeatingCoolingState = Characteristic.TargetHeatingCoolingState.HEAT;
-							} else {
-								this.targetHeatingCoolingState = Characteristic.TargetHeatingCoolingState.COOL;
-							}
-
-							callback(null, this.targetHeatingCoolingState);
-						} else {
-							this.log('could not fetch current temperature');
-							callback('could not fetch current temperature');
-						}
-					});
-				} else {
-					this.log('could not fetch current target temperature');
-					callback('could not fetch current target temperature');
-				}
-			});
+			this.targetHeatingCoolingState = Characteristic.TargetHeatingCoolingState.COOL;
 		}
+
+		callback(null, this.targetHeatingCoolingState);
 	}
 }

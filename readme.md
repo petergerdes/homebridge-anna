@@ -23,7 +23,7 @@ Configuration sample:
         "accessories": [
             {
                 "accessory": "Thermostat",
-                "name": "smile",
+                "name": "Thermostaat",
                 "ip": "192.168.1.123",
                 "password": "pass",
                 "maxTemp": "26",

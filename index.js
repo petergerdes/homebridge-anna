@@ -9,7 +9,7 @@
     "accessories": [
         {
             "accessory": "Thermostat",
-            "name": "smile",
+            "name": "Thermostat",
             "ip": "192.168.1.123",
             "password": "pass",
             "maxTemp": "26",
@@ -54,6 +54,12 @@ class Thermostat {
 		this.targetHeatingCoolingState = Characteristic.TargetHeatingCoolingState.HEAT;
 
 		this.service = new Service.Thermostat(this.name);
+
+		this.updateTimer = setInterval(() => {
+			this.updateTemps();
+		}, 3000);
+
+		this.updateTemps();
 	}
 
 	getServices() {
@@ -89,7 +95,8 @@ class Thermostat {
 
 		this.service
 			.getCharacteristic(Characteristic.TargetHeatingCoolingState)
-			.on('get', this.getTargetHeatingCoolingState.bind(this));
+			.on('get', this.getTargetHeatingCoolingState.bind(this))
+			.on('set', this.setTargetHeatingCoolingState.bind(this));
 
 		/* Return both the main service (this.service) and the informationService */
 		return [informationService, this.service];
@@ -106,7 +113,7 @@ class Thermostat {
 
 			var device = {
 				ip: this.ip,
-				name: this.name,
+				name: 'smile',
 				password: this.password
 			};
 
@@ -123,17 +130,24 @@ class Thermostat {
 		});
 	}
 
-	getCurrentTemperature(callback) {
+	updateTemps() {
 		if (!this.annaDevice) {
 			this.setupAnnaDevice().then(() => {
 				this.log('getCurrentTemperature from Anna on: ' + this.annaDevice.ip);
 				this.annaDevice._getMeasure((result) => {
 					if (result) {
 						this.currentTemperature = result;
-						callback(null, this.currentTemperature);
 					} else {
 						this.log('could not fetch current temperature');
-						callback('could not fetch current temperature');
+					}
+				});
+
+				this.log('getCurrentTargetTemperature from Anna on: ' + this.annaDevice.ip);
+				this.annaDevice._getTarget((result) => {
+					if (result) {
+						this.targetTemperature = result;
+					} else {
+						this.log('could not fetch current target temperature');
 					}
 				});
 			});
@@ -142,43 +156,28 @@ class Thermostat {
 			this.annaDevice._getMeasure((result) => {
 				if (result) {
 					this.currentTemperature = result;
-					callback(null, this.currentTemperature);
 				} else {
 					this.log('could not fetch current temperature');
-					callback('could not fetch current temperature');
+				}
+			});
+
+			this.log('getCurrentTargetTemperature from Anna on: ' + this.annaDevice.ip);
+			this.annaDevice._getTarget((result) => {
+				if (result) {
+					this.targetTemperature = result;
+				} else {
+					this.log('could not fetch current target temperature');
 				}
 			});
 		}
 	}
 
+	getCurrentTemperature(callback) {
+		callback(null, this.currentTemperature);
+	}
+
 	getTargetTemperature(callback) {
-		if (!this.annaDevice) {
-			this.setupAnnaDevice().then(() => {
-				this.log('getCurrentTemperature from Anna on: ' + this.annaDevice.ip);
-
-				this.annaDevice._getTarget((result) => {
-					if (result) {
-						this.targetTemperature = result;
-						callback(null, this.targetTemperature);
-					} else {
-						this.log('could not fetch current target temperature');
-						callback('could not fetch current target temperature');
-					}
-				});
-			});
-		} else {
-			this.log('getCurrentTemperature from Anna on: ' + this.annaDevice.ip);
-
-			this.annaDevice._getTarget((result) => {
-				if (result) {
-					this.targetTemperature = result;
-					callback(null, this.targetTemperature);
-				} else {
-					this.log('could not fetch current target temperature');
-					callback('could not fetch current target temperature');
-				}
-			});
-		}
+		callback(null, this.targetTemperature);
 	}
 
 	setTargetTemperature(value, callback) {
@@ -212,14 +211,11 @@ class Thermostat {
 	}
 
 	getTargetHeatingCoolingState(callback) {
-		if((this.currentTemperature === this.targetTemperature))
-		{
-			this.targetHeatingCoolingState = Characteristic.TargetHeatingCoolingState.HEAT;
-		} else if (this.currentTemperature < this.targetTemperature) {
-			this.targetHeatingCoolingState = Characteristic.TargetHeatingCoolingState.HEAT;
-		} else {
-			this.targetHeatingCoolingState = Characteristic.TargetHeatingCoolingState.COOL;
-		}
+		callback(null, this.targetHeatingCoolingState);
+	}
+
+	setTargetHeatingCoolingState(value, callback) {
+		this.targetHeatingCoolingState = value;
 
 		callback(null, this.targetHeatingCoolingState);
 	}

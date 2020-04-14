@@ -26,8 +26,9 @@ Configuration sample:
                 "name": "Thermostaat",
                 "ip": "192.168.1.123",
                 "password": "pass",
-                "maxTemp": "26",
-                "minTemp": "15"
+                "maxTemp": "26", #in celsius
+                "minTemp": "15", #in celsius
+                "interval": "3000" #in milliseconds, 3 seconds by default
             }
         ],
 

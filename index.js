@@ -13,7 +13,8 @@
             "ip": "192.168.1.123",
             "password": "pass",
             "maxTemp": "26",
-            "minTemp": "15"
+            "minTemp": "15",
+            "interval": "3000"
         }
     ],
 
@@ -44,6 +45,7 @@ class Thermostat {
 		this.minTemp = config.minTemp || 15;
 		this.name = config.name || 'smile';
 		this.password = config.password || null;
+		this.interval = config.interval || 3000;
 		this.ip = config.ip || null;
 		this.annaDevice = null;
 		this.log(this.ip, this.name);
@@ -57,7 +59,7 @@ class Thermostat {
 
 		this.updateTimer = setInterval(() => {
 			this.updateTemps();
-		}, 3000);
+		}, this.interval);
 
 		this.updateTemps();
 	}

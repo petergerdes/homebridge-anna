@@ -34,7 +34,7 @@ module.exports = (homebridge) => {
 	/* this is the starting point for the plugin where we register the accessory */
 	Service = homebridge.hap.Service;
 	Characteristic = homebridge.hap.Characteristic;
-	homebridge.registerAccessory('homebridge-anna-thermostat', 'Thermostat', Thermostat);
+	homebridge.registerAccessory('homebridge-anna', 'Thermostat', Thermostat);
 }
 
 class Thermostat {

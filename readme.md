@@ -1,6 +1,6 @@
 # homebridge-anna
 
-Supports the Plugwise Anna thermostat on the HomeBridge Platform
+Supports the Plugwise Anna thermostat (Up to legacy version 1.8) on the HomeBridge Platform. If you are on a higher version than v1.8, this plugin will not work!
 
 # Installation
 
